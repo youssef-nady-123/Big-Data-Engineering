@@ -1,0 +1,216 @@
+#Initializing PySpark
+from pyspark import SparkContext, SparkConf
+
+# #Spark Config
+conf = SparkConf().setAppName("sample_app")
+sc = SparkContext(conf=conf)
+
+from pyspark.sql import SQLContext, Row
+sqlContext = SQLContext(sc)
+
+
+##### Working with json files #####
+##### Create a dataframe from json files #####
+df = sqlContext.read.json("emp.json")
+df.show()
+df.printSchema()
+
+##### SQL Queries #####
+df.select("name").show()
+df.count()
+df.show(5)
+df.select("name","department_ID").show()
+df.select("salary").show()
+df.filter(df["salary"]>5000).show()
+df.filter(df["salary"]==6000).show()
+df.filter(df["salary"]>5000).select("name","salary").show()
+df.groupBy("department_ID").count().show()
+df.groupBy("department_ID").agg({"salary":"sum"}).show()
+
+from pyspark.sql.functions import *
+df.select(mean("salary"),sum("salary")).show()
+df.groupBy("department_ID").sum("salary").show()
+
+df1 = sqlContext.read.json("/home/bigdata/Desktop/Lecture2/JSON_dataset/department.json")
+df1.show()
+df1.printSchema()
+merge = df.join(df1,"department_ID")
+df.printSchema()
+merge.printSchema()
+merge.show(5)
+df.select('name').distinct().count(),df1.select('department_ID').distinct().count()
+
+
+##### Creating dataframe from a Dict #####
+projectList =  [{"project_ID":"100","name":"Sales"},
+                {"project_ID":"200","name":"Taxs"},
+                {"project_ID":"300","name":"Customes"},
+                {"project_ID":"400","name":"Training"}]
+projectDF = sqlContext.createDataFrame(projectList) # it will give a warning "inferring schema from dict is deprecated"
+projectDF.show()
+
+#Joining DataFrames
+#df.join(projectDF,df.project_ID == projectDF.project_ID).show()
+final_merge=merge.join(projectDF,"project_ID").show()
+
+
+#cascading operations
+#sum of salaries > 6000 in the same project
+df.filter(df["salary"]<6000).join(df1,df.department_ID == df1.department_ID).groupBy("project_ID").agg({"Salary":"sum"}).show()
+
+#Register a dataframe as a table and Run SQL Statments against
+df.registerTempTable("Employees")
+# 
+sqlContext.sql("select * from Employees where project_ID ==100 and salary > 2000 and Address = 'US'").show()
+# Retriving Sum,avg,Min salary for every project
+sqlContext.sql("select project_ID,sum(salary) as sum_salary,avg(salary) as avg_salary,min(salary) as min_salary from Employees group By project_ID").show()
+
+# 
+df.registerTempTable("Employees")
+df1.registerTempTable("Department")
+projectDF.registerTempTable("Projects")
+sqlContext.sql("select * from Employees" ).show()
+
+sqlContext.sql("select * from Department" ).show()
+
+sqlContext.sql("select * from Projects" ).show()
+
+# select sum of salaries for each department
+sqlContext.sql("select e.department_ID,departmentName ,\
+               sum (salary) from Employees e, department d\
+               where e.department_ID = d.department_ID\
+               group By e.department_ID, departmentName\
+               order By d.departmentName").show()
+
+
+
+**************** Creating DataFrame From csv files******************
+from pyspark.sql import SQLContext
+sqlcontext = SQLContext(sc)
+
+df.registerTempTable("Emp")
+sqlContext.sql("select * from Emp").show()
+
+from pyspark.sql import Row
+datalines= sc.textFile("inspections_plus.csv")
+datalines.count()
+#Removing First Line
+header = datalines.first()
+header
+aa = datalines.filter(lambda ln: ln != header)
+aa.first()
+parts = aa.map(lambda ln: ln.split(","))
+parts.take(2)
+autoMap = parts.map(lambda p: Row(Business_ID = p[0],date = p[2],type = p[3],score = p[1]))
+autoMap.take(2)
+autoDF = sqlContext.createDataFrame(autoMap)
+autoDF.registerTempTable("inspect")
+sqlContext.sql("select * from inspect").show()
+
+#Eroor, Unsupported language features in query
+sqlContext.sql("insert into inspect values('50','20140729','12','Routine-Unscheduled')")
+
+*********************************
+
+####### Working With actual databases #######
+#Open MySQL
+mysql -u root -p
+password:cloudera
+
+show databases;
+
+create database test;
+
+create table employee (emp_id int(5),emp_name varchar(45),constraint emp_id_pk primary key(emp_id) );
+create table student(stu_id int(5),stu_name varchar(50),constraint emp_id_pk primary key(stu_id) );
+
+insert into employee values (1,'employee one'),(2,'employee two'),(3,'employee three'),(4,'employee four'),(5,'employee five'),(6,'employee six'),(7,'employee seven'),(8,'employee eight'),(9,'employee nine');
+insert into student values (1,'student one'),(2,'student two'),(3,'student three'),(4,'student four'),(5,'student five');
+
+select * from employee;
+
+#Open pyspark and connect to DB test
+demoDF = sqlContext.read.format("jdbc").options(url="jdbc:mysql://localhost/test",
+                                                driver = "com.mysql.jdbc.Driver",
+                                                dbtable="employee",
+                                                user="root",password="cloudera").load()
+demoDF.select("*").show()
+demoDF.registerTempTable("employees")
+sqlContext.sql("select * from employees").show()
+
+#assignment
+Create a table names courses that has:
+- Course_ID,Course_name,Price
+- Add the following data to the table
++-----------+--------------------------+-------+
+| course_id | course_name              | price |
++-----------+--------------------------+-------+
+|         1 | Introduction To Big Data |  1500 |
+|         2 | Hive                     |  5000 |
+|         3 | Spark                    |  6000 |
+|         4 | SQOOP                    |  4000 |
+|         6 | PIG                      |  4000 |
++-----------+--------------------------+-------+
+- Add a column names Course_ID to the employee table 
+- Update the data of employess table (Add course_ID column).
++--------+----------------+-----------+
+| emp_id | emp_name       | course_ID |
++--------+----------------+-----------+
+|      1 | employee one   |         1 |
+|      2 | employee two   |         1 |
+|      3 | employee three |         2 |
+|      4 | employee four  |         3 |
+|      5 | employee five  |         3 |
+|      6 | employee six   |         4 |
+|      7 | employee seven |         4 |
+|      8 | employee eight |         5 |
+|      9 | employee nine  |         6 |
++--------+----------------+-----------+
+- Connect to the courses table from pyspark
+- join the two tables to show the following results.
+- Retrive all employess(Emp_name,course_Name,Price) take courses with price more than 5000.
++------+--------------+--------------------+-----+
+|emp_id|      emp_name|         course_name|price|
++------+--------------+--------------------+-----+
+|     1|  employee one|Introduction To B...| 1500|
+|     2|  employee two|Introduction To B...| 1500|
+|     3|employee three|                Hive| 5000|
+|     4| employee four|               Spark| 6000|
+|     5| employee five|               Spark| 6000|
+|     6|  employee six|               SQOOP| 4000|
+|     7|employee seven|               SQOOP| 4000|
+|     9| employee nine|                 PIG| 4000|
++------+--------------+--------------------+-----+
+
+
+
+
+
+
+#Answer
+use test;
+create table courses(course_id int(2),course_name varchar(50),price int(4),constraint course_id_pk primary key(course_id) );
+
+ALTER TABLE employee ADD course_ID int(2);
+
+UPDATE employee SET course_ID = 1 WHERE emp_id = 1;
+UPDATE employee SET course_ID = 1 WHERE emp_id = 2;
+UPDATE employee SET course_ID = 2 WHERE emp_id = 3;
+UPDATE employee SET course_ID = 3 WHERE emp_id = 4;
+UPDATE employee SET course_ID = 3 WHERE emp_id = 5;
+UPDATE employee SET course_ID = 4 WHERE emp_id = 6;
+UPDATE employee SET course_ID = 4 WHERE emp_id = 7;
+UPDATE employee SET course_ID = 5 WHERE emp_id = 8;
+UPDATE employee SET course_ID = 6 WHERE emp_id = 9;
+
+coursesDF = sqlContext.read.format("jdbc").options(url="jdbc:mysql://localhost/test",
+                                                driver = "com.mysql.jdbc.Driver",
+                                                dbtable="courses",
+                                                user="root",password="cloudera").load()
+
+coursesDF.show()
+coursesDF.registerTempTable("courses")
+sqlContext.sql("select * from courses").show()
+sqlContext.sql("select emp_id,emp_name,course_name,price\
+            from employees,courses\
+            where employees.course_id == courses.course_id").show()

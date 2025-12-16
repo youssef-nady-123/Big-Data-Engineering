@@ -1,0 +1,161 @@
+----------------------------------
+LAB 2
+----------------------------------
+
+To Start HBase
+
+start-hbase.sh
+
+hbase shell
+http://localhost:16010
+
+To open hbase .......>  Write hbase shell
+
+
+# To list all the abailable tables 
+hbase(main)> list
+
+# Create table named htest with a column family name cf
+hbase(main)> create 'htest' ,'cf'
+             create 'htest',  {NAME=>'cf',VERSIONS=>3}
+             create 'htest' ,'Personal_Data','Job_Data'
+
+hbase(main)> list 
+
+
+# insert a record in that table
+hbase(main)> put 'htest' ,'r1', 'cf:c1', 'v1'
+
+
+
+'htest' -----> table name 
+'r1'-----> Row key (identifier)
+'cf:c1' -----> colmun family: column name
+'v1' -----> the inserted value 
+( it has a very flexible schema)
+
+# insert another record in that table
+hbase(main)> put 'htest' ,'r1', 'cf:c2', 'v2'
+
+# Insert another record (Row) in that table
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3'
+
+Note that each row can have a multiple columns
+
+
+# To see the data
+hbase(main)> scan'htest'
+
+Note that, when you see the data, you see an additional column called timestamp
+when you store anything inside Hadoop, By default it has a replication factor of 3
+Each block will be replicated into 3 different machines inside the cluster.
+inside Hbase, It basically stores 3 versions of the data. 
+It means that each column is able to store 3 different vesions of the data.
+It is called the vesions of particular column values.
+
+# Getting the values of r1
+hbase(main)> get 'htest' ,'r1'
+
+
+# Modefying values
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3_updated'
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3_updated_3'
+
+hbase(main)> scan 'htest'
+(You will get the latest value)
+
+What happened to the other two values, Can we retrive them?
+hbase(main)> get 'htest' ,'r1',{COLUMN=>'cf:c3',VERSIONS=>3}
+(TO list all the 3 versions of the column c3)
+
+hbase(main)> get 'htest' ,'r1',{COLUMN=>'cf:c3',VERSIONS=>2}
+(TO list all the 2 versions of the column c3)
+
+hbase(main)> get 'htest' ,'r1',{COLUMN=>'cf:c3',VERSIONS=>10}
+(Only 3 values can be retrived)
+
+Let is see them
+
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3_updated_4'
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3_updated_5'
+hbase(main)> put 'htest' ,'r1', 'cf:c3', 'v3_updated_6'
+
+hbase(main)> get 'htest' ,'r1',{COLUMN=>'cf:c3',VERSIONS=>10}
+(Only last 3 values are retrived)
+
+What if you want to retrive a particular value
+hbase(main)> get 'htest' ,'r1', {COLUMN=>'cf:c3',TIMESTAMP=>1414255003949}
+(You should specify the timeStamp the required retrived value)
+(You will got the message timestamp = 1414255003949 value= v3_updated_5)
+
+
+Disable the table
+---------------------------------------------------
+disable 'htest'
+(Nobody can perform any operation)
+
+Adding Adding another family Column
+---------------------------------------------------
+hbase(main)> alter 'htest', {NAME=> 'cf_altered'}
+
+
+
+Enable/Disable Tables
+---------------------------------------------------
+hbase(main)> enable 'htest'
+hbase(main)> describe 'htest'
+
+# Adding values to the new Column Family cf_altered
+---------------------------------------------------
+hbase(main)> put 'htest' ,'r1', 'cf_altered:c3', 'v3_updated_6'
+hbase(main)> scan 'htest'
+
+
+Deleting the data
+---------------------------------------------------
+hbase(main)> delete 'htest', 'r1','cf:c3'
+hbase(main)> scan 'htest'
+
+
+Drop the table
+---------------------------------------------------
+hbase(main)> disable 'htest'
+hbase(main)> drop'htest'
+hbase(main)> list
+hbase(main)> scan 'htest'
+(You will got the message unknown table htest)
+
+
+deleting coulmn family
+---------------------------------------------------
+alter 'htest', 'delete' => 'cf'
+
+get 'emp', 'r1', {COLUMN => ['cf:name', 'cf:dept', 'cf_1:salary']}
+
+
+
+
+Data Manipulation
+---------------------------------
+
+1- count
+count 'htest'
+
+2- put
+create 'employee' ,'personal_Information'
+
+put 'employee', 'r1', 'personal_Information:Gender', 'M', 10
+put 'employee', 'r1', 'personal_Information:Gender', 'F', 11
+put 'employee', 'r1', 'personal_Information:Gender', 'Male', 12
+put 'employee', 'r1', 'personal_Information:Gender', 'Female', 13
+
+scan 'employee' , {RAW=> true , VERSIONS => 10} # This will get all versions
+
+3- Add new 2 column Family
+alter 'employee', 'personal_Information', {NAME => 'Basic_Info'}, {NAME => 'Working_Info', VERSIONS => 5}
+
+
+
+
+
+https://www.guru99.com/hbase-shell-general-commands.html

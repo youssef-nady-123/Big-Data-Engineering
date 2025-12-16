@@ -1,0 +1,141 @@
+# To start all hadoop service write
+start-all.sh
+
+#To Start HBase
+start-hbase.sh
+
+#To open the shell write
+hbase shell
+http://localhost:16010
+
+To open hbase .......>  Write hbase shell
+
+Basic Operatons of Hbase
+------------------------------------------------------------------
+
+creating table
+---------------------------------
+	create 'table_name', 'colmn_family'
+	
+	create 'table_name', 'colmn_family1','colmn_family2'
+
+	create 'table_name',  {NAME=>'cf1',VERSIONS=>10}, {NAME=>'cf2',VERSIONS=>10}
+	create 'Student',  {NAME=>'Personal_Info',VERSIONS=>10}, {NAME=>'Submission_Details',VERSIONS=>10}
+		
+	create 'Student', 'Personal_Info','Submission_Details'
+
+
+colmn_family is to group set of columns together  eg: all users_details(Personal_info,educatoin,job,....etc)
+
+status of the table
+---------------------------------	
+	status 'table_name'
+               (1 active master, 0 backup masters, 1 servers, 0 dead, 9.0000 average load)
+	status 'Student'
+
+version of the table
+---------------------------------
+This command will display the currently used HBase version in command mode
+version
+
+whoami
+---------------------------------
+This command “whoami” is used to return the current HBase user information from the HBase cluster.
+
+
+describing the table
+--------------------------------- 
+	describe 'table_name'
+	describe 'Student'
+
+
+Inserting /Updating/ Modifying table's data
+---------------------------------
+put 'table_name', 'ROW_KEY','colmn_family:column_name','value'
+ROW_KEY: is similar to PK is the RDB
+	
+put 'Student', '1','Personal_Info:Name', 'Ahmed'
+put 'Student', '1','Personal_Info:Address', 'Giza'
+put 'Student', '1','Personal_Info:Gender', 'M'
+put 'Student', '1','Personal_Info:Mobile', '01020321654'
+put 'Student', '1','Personal_Info:DOB', '10/10/1990'
+
+put 'Student', '2','Personal_Info:Name', 'Mohmed'
+put 'Student', '2','Personal_Info:Address', 'Giza'
+put 'Student', '2','Personal_Info:Gender', 'M'
+put 'Student', '2','Personal_Info:Mobile', '01020321752'
+put 'Student', '2','Personal_Info:DOB', '10/1/1992'
+
+put 'Student', '3','Personal_Info:Name', 'Rania'
+put 'Student', '3','Personal_Info:Address', 'Cairo'
+put 'Student', '3','Personal_Info:Gender', 'F'
+put 'Student', '3','Personal_Info:Mobile', '01023521752'
+
+put 'Student', '3','Submission_Details:Course_number', 'IS01'
+put 'Student', '3','Submission_Details:Course_Name', 'Information System'
+put 'Student', '3','Submission_Details:Course_Start_Date', '1/1/2023'
+put 'Student', '3','Submission_Details:Course_End_Date', '31/3/2023'
+
+put 'Student', 'St1','Personal_Info:Name', 'Hassan'
+put 'Student', 'St1','Personal_Info:Address', 'Giza'
+put 'Student', 'St1','Personal_Info:Gender', 'M'
+put 'Student', 'St1','Personal_Info:Mobile', '01020321654'
+put 'Student', 'St1','Personal_Info:DOB', '10/10/1990'
+
+put 'Student', 'St2','Personal_Info:Name', 'Ali'
+put 'Student', 'St2','Personal_Info:Address', 'Giza'
+put 'Student', 'St2','Personal_Info:Gender', 'M'
+put 'Student', 'St2','Personal_Info:Mobile', '01020352752'
+put 'Student', 'St2','Personal_Info:DOB', '10/11/1992'
+
+put 'Student', 'St3','Personal_Info:Name', 'Rania'
+put 'Student', 'St3','Personal_Info:Address', 'Alex'
+put 'Student', 'St3','Personal_Info:Gender', 'F'
+put 'Student', 'St3','Personal_Info:Mobile', '01023521752'
+
+Geting the value from the hbase
+---------------------------------
+scan 'table_name'
+Remark scan is like (select *)
+
+scan 'Student'
+scan 'Student',{COLUMNS => ['Personal_Info:Address','Personal_Info:DOB'], STARTROW => '1', STOPROW => '3'}
+
+
+get 'table_name', 'ROW_KEY',
+get'Student','1'
+
+
+
+Deleting Data
+---------------------------------
+1- Deleting column for certain Row_Key
+
+delete 'table_name', 'ROW_KEY', 'colmn_family:column_name'
+delete 'Student', '3', 'Submission_Details:Course_End_Date'
+
+2- removing all rows have a certain Row Key
+deleteall 'Student', 'St1'
+
+3- deleting coulmn family
+alter 'table_name', 'delete' => 'colmn_family'
+alter 'Student', 'delete' => 'Submission_Details'
+
+Droping Table
+---------------------------------
+
+Step1: disable 'table_name'
+
+is_enabled 'table_name'   # This command will verify whether the named table is enabled or not
+Step2: drop 'table_name'
+		
+
+
+
+Data Manipulation
+---------------------------
+
+count 'table_name'
+
+
+	

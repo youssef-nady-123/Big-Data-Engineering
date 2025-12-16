@@ -1,0 +1,76 @@
+#open hive
+
+just write hive
+if it does not start:
+- make sure that you are in (base) [bigdata@localhost]
+- open vi ~/.bashrc and make sure that these lines are included
+
+export HIVE_HOME=/home/bigdata/hive
+export HIVE_CONF_DIR=/home/bigdata/hive/conf
+export PATH=$HIVE_HOME/bin:$PATH
+export CLASSPATH=$CLASSPATH:/home/bigdata/hive/lib/*:.
+
+- If you perform any updates don't forget to write source ~/.bashrc 
+-----------------------------------------------------------------
+
+hive> show databases;
+hive> use default;
+
+hive> create database NTI;
+ hive>use NTI;
+
+
+
+#Creating managed/internal Tables
+hive> create table employee (ID int, name string, salary float, Age int) row format delimited fields terminated by ',';
+
+
+hive> describe employee;
+
+# You can browse it on
+http://localhost:50070/explorer.html#/user/hive/warehouse/
+
+
+hive> create table student (ID int, name string, gpa float, mobile string) row format delimited fields terminated by ',';
+
+#Creating exnternal Tables
+hive> create external table subjects(code string, name string,Study_year int)
+    > row format delimited fields terminated by ',' location'/home/bigdata/subjects';
+
+hive> create external table subjects1(code string, name string,Study_year int)
+    > row format delimited fields terminated by ',' location'/home/bigdata/Desktop/subjects';
+
+
+
+hive> create external table profs(id int, name string,salary int,mobile string, availability Boolean)
+    > row format delimited fields terminated by ',' location'/home/bigdata/profs';
+
+
+
+# partitioned tables.
+hive> create table available_profs(id int, name string,salary int,mobile string) partitioned by(availability string)
+    > row format delimited fields terminated by',';
+
+
+# Loading data from file in HDFS to the table.
+
+hadoop fs -copyFromLocal /home/bigdata/Desktop/profs1.txt /user/hive
+
+LOAD DATA INPATH '/user/hive/profs1.txt' overwrite INTO TABLE profs;
+
+#Loading Data from local
+
+
+load data local inpath'/home/bigdata/Desktop/subjects.txt' overwrite into table subjects;
+load data local inpath'/home/bigdata/Desktop/student.txt' overwrite into table student;
+
+
+load data local inpath'/home/bigdata/Desktop/profs1.txt' overwrite into table available_profs
+partition (availability="exist");
+
+load data local inpath'/home/bigdata/Desktop/profs2.txt' into table available_profs
+partition (availability="not exist");
+
+
+
+
